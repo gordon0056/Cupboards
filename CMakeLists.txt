@@ -142,3 +142,119 @@ if(BUILD_GAME)
     FetchContent_MakeAvailable(imgui-sfml)
     add_subdirectory(game)
 endif()
+
+# ============================================================
+# Tests
+# ============================================================
+enable_testing()
+
+if(NOT BUILD_GAME)
+    add_library(cupboards-game-logic STATIC
+        game/src/TweenManager.cpp
+        game/src/MoveCommand.cpp
+        game/src/AudioManager.cpp
+        game/src/SaveManager.cpp
+    )
+    target_include_directories(cupboards-game-logic PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/game/src
+    )
+    target_link_libraries(cupboards-game-logic PUBLIC
+        cupboards-core
+        sfml-system
+        sfml-audio
+        sfml-graphics
+    )
+    set(GAME_LOGIC_LIB cupboards-game-logic)
+else()
+    set(GAME_LOGIC_LIB cupboards-core)
+    add_library(cupboards-game-logic-objs OBJECT
+        game/src/TweenManager.cpp
+        game/src/MoveCommand.cpp
+        game/src/AudioManager.cpp
+        game/src/SaveManager.cpp
+    )
+    target_include_directories(cupboards-game-logic-objs PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/game/src
+    )
+    target_link_libraries(cupboards-game-logic-objs PUBLIC
+        cupboards-core
+        sfml-system
+        sfml-audio
+        sfml-graphics
+    )
+endif()
+
+add_executable(core_tests
+    tests/unit/test_main.cpp
+    tests/unit/test_graph.cpp
+    tests/unit/test_levelparser.cpp
+    tests/unit/test_pathfinder.cpp
+    tests/unit/test_gamestate.cpp
+    tests/unit/test_tween.cpp
+    tests/unit/test_movecommand.cpp
+    tests/unit/test_levelparser_errors.cpp
+    tests/unit/test_audio.cpp
+    tests/unit/test_savemanager.cpp
+    tests/unit/test_localization.cpp
+)
+
+if(TARGET Catch2::Catch2WithMain)
+    target_link_libraries(core_tests PRIVATE ${GAME_LOGIC_LIB} Catch2::Catch2WithMain)
+else()
+    target_link_libraries(core_tests PRIVATE ${GAME_LOGIC_LIB} Catch2::Catch2)
+endif()
+
+if(BUILD_GAME AND TARGET cupboards-game-logic-objs)
+    target_link_libraries(core_tests PRIVATE cupboards-game-logic-objs)
+endif()
+
+target_include_directories(core_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/game/src
+)
+
+include(Catch)
+catch_discover_tests(core_tests)
+
+add_executable(core_tests_gtest
+    tests/unit/test_gtest_main.cpp
+    tests/unit/test_graph_gtest.cpp
+    tests/unit/test_levelparser_gtest.cpp
+    tests/unit/test_pathfinder_gtest.cpp
+    tests/unit/test_gamestate_gtest.cpp
+)
+
+target_link_libraries(core_tests_gtest PRIVATE
+    cupboards-core
+    GTest::gtest
+    GTest::gtest_main
+)
+
+target_include_directories(core_tests_gtest PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/include
+)
+
+include(GoogleTest)
+gtest_discover_tests(core_tests_gtest)
+
+if(BUILD_GAME)
+    add_executable(integration_tests
+        tests/integration/test_game_loop_headless.cpp
+        tests/integration/test_tween_input_lock.cpp
+        game/src/TweenManager.cpp
+    )
+
+    target_link_libraries(integration_tests PRIVATE
+        cupboards-core
+        GTest::gtest
+        GTest::gtest_main
+        sfml-system
+    )
+
+    target_include_directories(integration_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/core/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/game/src
+    )
+
+    gtest_discover_tests(integration_tests)
+endif()
