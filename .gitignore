@@ -1,127 +1,55 @@
-### C
-# Object files
+﻿# C++ build artifacts
+build/
+bin/
+obj/
+out/
 *.o
 *.obj
-*.elf
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
 *.exe
-*.out
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Debug files
-*.dSYM/
-*.idb
-*.pdb
-
-### C++
-# Object files
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Dynamic libraries
-*.so
-*.dylib
 *.dll
-
-# Static libraries
-*.a
 *.lib
-
-# Executables
-*.exe
-*.out
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Debug files
-*.dSYM/
-*.idb
 *.pdb
+*.ilk
+*.tlog
+*.lastbuildstate
+*.deps
 
-### Windows
-# Windows thumbnail cache files
-Thumbs.db
-
-# Folder config file
-[Dd]esktop.ini
-
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
-
-# Windows shortcuts
-*.lnk
-
-### Linux
-# Backup files
-*~
-
-# Temporary files from deleted open files
-.fuse_hidden*
-
-# KDE directory preferences
-.directory
-
-# Linux trash folder
-.Trash-*
-
-# NFS temporary files
-.nfs*
-
-### VisualStudio
-# User-specific files
+# Visual Studio
 *.suo
 *.user
-
-# Build results
-[Dd]ebug/
-[Rr]elease/
-x64/
-x86/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-[Bb]in/
-[Oo]bj/
-
-# Visual Studio cache/options directory
+*.sln.ide/
+*.vcxproj.user
 .vs/
 
-# MSTest test Results
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
 
-# NuGet
-*.nupkg
-**/[Pp]ackages/*
-!**/[Pp]ackages/build/
-*.nuget.props
-*.nuget.targets
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# Publish Web Output
-*.[Pp]ublish.xml
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+tests/unit/*.json
+*.log
+
+# Audio placeholders (generated assets)
+game/assets/sounds/*.wav
+game/assets/sounds/*.ogg
+
+# Runtime / temp
+imgui.ini
+game/assets/settings.json
+debugrusproblem.md
+fideck.md
+
+# Linux build
+build_linux/

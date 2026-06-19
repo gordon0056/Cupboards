@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+﻿cmake_minimum_required(VERSION 3.20)
 project(Cupboards VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -105,3 +105,40 @@ FetchContent_MakeAvailable(googletest)
 # Core library
 # ============================================================
 add_subdirectory(core)
+
+# ============================================================
+# Game executable
+# ============================================================
+option(BUILD_GAME "Build the game executable" ON)
+if(BUILD_GAME)
+    include(FetchContent)
+    FetchContent_Declare(
+        imgui
+        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+        GIT_TAG        v1.91.0
+        GIT_SHALLOW    ON
+    )
+    FetchContent_Declare(
+        imgui-sfml
+        GIT_REPOSITORY https://github.com/eliasdaler/imgui-sfml.git
+        GIT_TAG        v2.6
+        GIT_SHALLOW    ON
+    )
+    FetchContent_MakeAvailable(imgui)
+    set(IMGUI_DIR ${imgui_SOURCE_DIR} CACHE PATH "" FORCE)
+    set(IMGUI_SFML_FIND_SFML ON)
+    set(IMGUI_SFML_IMGUI_DEMO OFF)
+
+    if(UNIX AND NOT APPLE)
+        set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+    else()
+        set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+    endif()
+
+    if(NOT UNIX)
+        set(IMGUI_SFML_FIND_SFML OFF)
+    endif()
+
+    FetchContent_MakeAvailable(imgui-sfml)
+    add_subdirectory(game)
+endif()
