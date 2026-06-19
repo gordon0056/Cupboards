@@ -1,0 +1,21 @@
+{
+  "name": "Linear Path",
+  "piece_count": 3,
+  "nodes": [
+    { "id": 1, "x": 100, "y": 200 },
+    { "id": 2, "x": 200, "y": 200 },
+    { "id": 3, "x": 300, "y": 200 },
+    { "id": 4, "x": 400, "y": 200 },
+    { "id": 5, "x": 500, "y": 200 }
+  ],
+  "edges": [
+    { "a": 1, "b": 2 },
+    { "a": 2, "b": 3 },
+    { "a": 3, "b": 4 },
+    { "a": 4, "b": 5 }
+  ],
+  "start_positions": [1, 2, 3],
+  "win_positions":   [3, 4, 5],
+  "piece_colors": ["#FF0000", "#00FF00", "#0000FF"],
+  "bg_music": "music_game.ogg"
+}
