@@ -43,7 +43,6 @@ tests/unit/*.json
 
 # Audio placeholders (generated assets)
 game/assets/sounds/*.wav
-game/assets/sounds/*.ogg
 
 # Runtime / temp
 imgui.ini
