@@ -237,6 +237,72 @@ target_include_directories(core_tests_gtest PRIVATE
 include(GoogleTest)
 gtest_discover_tests(core_tests_gtest)
 
+# ============================================================
+# Install rules
+# ============================================================
+if(BUILD_GAME)
+    install(TARGETS cupboards-game
+        RUNTIME DESTINATION bin
+        BUNDLE DESTINATION bin
+    )
+
+    install(DIRECTORY game/assets/
+        DESTINATION bin/assets
+    )
+
+    install(FILES
+        ${CMAKE_SOURCE_DIR}/README.md
+        DESTINATION bin
+    )
+endif()
+
+# ============================================================
+# CPack packaging
+# ============================================================
+set(CPACK_PACKAGE_NAME "Cupboards")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_VENDOR "Cupboards Team")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "C++17 board game engine with SFML graphics")
+
+if(WIN32)
+    set(CPACK_GENERATOR "NSIS;ZIP")
+    set(CPACK_NSIS_DISPLAY_NAME "Cupboards")
+    set(CPACK_NSIS_PACKAGE_NAME "Cupboards ${PROJECT_VERSION}")
+    set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
+    set(CPACK_NSIS_MODIFY_PATH OFF)
+    set(CPACK_NSIS_CREATE_ICONS_ON_DESKTOP ON)
+elseif(UNIX AND NOT APPLE)
+    set(CPACK_GENERATOR "DEB;TGZ")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Cupboards Team")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "games")
+    set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "C++17 board game puzzle")
+    set(CPACK_DEBIAN_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-Linux.deb")
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION ON)
+endif()
+
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/README.md")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
+
+set(CPACK_SOURCE_GENERATOR "ZIP;TGZ")
+set(CPACK_SOURCE_IGNORE_FILES
+    "/build/"
+    "/build_linux/"
+    "/.git/"
+    "/.vs/"
+    "/out/"
+    "/${CMAKE_CURRENT_BINARY_DIR}/"
+    "\\\\.zip$"
+    "\\\\.tar\\\\.gz$"
+    "\\\\.exe$"
+    "\\\\.pdb$"
+    "/imgui\\\\.ini$"
+    "[\\/]\\\\.gitignore$"
+)
+
+include(CPack)
+
 if(BUILD_GAME)
     add_executable(integration_tests
         tests/integration/test_game_loop_headless.cpp
