@@ -314,6 +314,7 @@ set(CPACK_SOURCE_GENERATOR "ZIP;TGZ")
 set(CPACK_SOURCE_IGNORE_FILES
     "/build/"
     "/build_linux/"
+    "/build_wsl/"
     "/.git/"
     "/.vs/"
     "/out/"
