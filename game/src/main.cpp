@@ -133,22 +133,58 @@ int main()
 
     ImGuiIO& io = ImGui::GetIO();
 
-    const char* fontCandidates[] = {
-        fontPath.c_str(),
-        "C:/Windows/Fonts/segoeui.ttf",
-        "C:/Windows/Fonts/tahoma.ttf",
-        "C:/Windows/Fonts/times.ttf",
-        "C:/Windows/Fonts/arial.ttf",
-        "C:/Windows/Fonts/cour.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+    auto getSystemFontDirs = []() -> std::vector<std::string>
+    {
+        std::vector<std::string> dirs;
+#ifdef _WIN32
+        dirs.push_back("C:/Windows/Fonts");
+        wchar_t buf[MAX_PATH + 2] = {};
+        if (GetWindowsDirectoryW(buf, MAX_PATH))
+        {
+            std::wstring wdir = buf;
+            dirs.push_back((std::filesystem::path(wdir) / "Fonts").string());
+        }
+#elif defined(__APPLE__)
+        dirs.push_back("/Library/Fonts");
+        dirs.push_back("/System/Library/Fonts");
+        if (auto home = std::getenv("HOME"))
+            dirs.push_back(std::string(home) + "/Library/Fonts");
+#else
+        dirs.push_back("/usr/share/fonts");
+        dirs.push_back("/usr/local/share/fonts");
+        if (auto home = std::getenv("HOME"))
+        {
+            dirs.push_back(std::string(home) + "/.fonts");
+            dirs.push_back(std::string(home) + "/.local/share/fonts");
+        }
+#endif
+        return dirs;
     };
+
+    auto collectFonts = [](const std::vector<std::string>& dirs,
+                           std::vector<std::string>& out)
+    {
+        for (const auto& d : dirs)
+        {
+            if (!std::filesystem::exists(d)) continue;
+            for (auto& entry : std::filesystem::recursive_directory_iterator(
+                     d, std::filesystem::directory_options::skip_permission_denied))
+            {
+                auto ext = entry.path().extension().string();
+                if (ext == ".ttf" || ext == ".otf" || ext == ".ttc")
+                    out.push_back(entry.path().string());
+            }
+        }
+    };
+
+    std::vector<std::string> fontCandidates;
+    fontCandidates.push_back(fontPath);
+    collectFonts(getSystemFontDirs(), fontCandidates);
 
     for (const auto& fp : fontCandidates)
     {
         if (!std::filesystem::exists(fp)) continue;
-        if (io.Fonts->AddFontFromFileTTF(fp, 18.0f, nullptr,
+        if (io.Fonts->AddFontFromFileTTF(fp.c_str(), 18.0f, nullptr,
                 io.Fonts->GetGlyphRangesCyrillic()))
         {
             std::cout << "[Font] Loaded: " << fp << std::endl;

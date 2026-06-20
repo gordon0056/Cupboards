@@ -140,6 +140,25 @@ if(BUILD_GAME)
     endif()
 
     FetchContent_MakeAvailable(imgui-sfml)
+
+    # Enable FreeType rasterizer in ImGui (fixes cmap format 4 glyph lookup
+    # for Cyrillic and other non-Latin scripts that stb_truetype mishandles)
+    find_package(Freetype QUIET)
+    if(Freetype_FOUND)
+        set(IMGUI_FT_INCLUDE_DIRS ${Freetype_INCLUDE_DIRS})
+        set(IMGUI_FT_LIB Freetype::Freetype)
+    elseif(FREETYPE_LIBRARY AND FREETYPE_INCLUDE_DIR_freetype2)
+        set(IMGUI_FT_INCLUDE_DIRS "${FREETYPE_INCLUDE_DIR_freetype2}" "${FREETYPE_INCLUDE_DIR_ft2build}")
+        set(IMGUI_FT_LIB "${FREETYPE_LIBRARY}")
+    else()
+        message(FATAL_ERROR "FreeType required for ImGui font rendering (via SFML)")
+    endif()
+
+    target_sources(ImGui-SFML PRIVATE "${imgui_SOURCE_DIR}/misc/freetype/imgui_freetype.cpp")
+    target_compile_definitions(ImGui-SFML PRIVATE IMGUI_ENABLE_FREETYPE)
+    target_include_directories(ImGui-SFML PRIVATE ${IMGUI_FT_INCLUDE_DIRS})
+    target_link_libraries(ImGui-SFML PRIVATE ${IMGUI_FT_LIB})
+
     add_subdirectory(game)
 endif()
 
