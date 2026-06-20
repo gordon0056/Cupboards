@@ -96,6 +96,13 @@ static void applyImGuiTheme(const game::AppSettings& settings)
 
 int main()
 {
+#ifdef __linux__
+    setenv("ALSOFT_DRIVERS", "pulse,alsa,null", 1);
+    auto pulseSrv = std::getenv("PULSE_SERVER");
+    std::cout << "[Audio] ALSOFT_DRIVERS=pulse,alsa,null"
+              << "  PULSE_SERVER=" << (pulseSrv ? pulseSrv : "(not set)") << std::endl;
+#endif
+
     std::string assetsBase = findAssetsBase();
     std::string levelsDir = assetsBase + "/levels";
     std::string savePath = assetsBase + "/save.json";
@@ -133,87 +140,78 @@ int main()
 
     ImGuiIO& io = ImGui::GetIO();
 
-    auto getSystemFontDirs = []() -> std::vector<std::string>
+    auto tryFontsUntilCyrillic = [&](const std::vector<std::string>& paths)
     {
-        std::vector<std::string> dirs;
-#ifdef _WIN32
-        dirs.push_back("C:/Windows/Fonts");
-        wchar_t buf[MAX_PATH + 2] = {};
-        if (GetWindowsDirectoryW(buf, MAX_PATH))
+        ImWchar cyrTest[] = {0x0401, 0x0424, 0x0430, 0x044F, 0};
+        for (const auto& fp : paths)
         {
-            std::wstring wdir = buf;
-            dirs.push_back((std::filesystem::path(wdir) / "Fonts").string());
-        }
-#elif defined(__APPLE__)
-        dirs.push_back("/Library/Fonts");
-        dirs.push_back("/System/Library/Fonts");
-        if (auto home = std::getenv("HOME"))
-            dirs.push_back(std::string(home) + "/Library/Fonts");
-#else
-        dirs.push_back("/usr/share/fonts");
-        dirs.push_back("/usr/local/share/fonts");
-        if (auto home = std::getenv("HOME"))
-        {
-            dirs.push_back(std::string(home) + "/.fonts");
-            dirs.push_back(std::string(home) + "/.local/share/fonts");
-        }
-#endif
-        return dirs;
-    };
-
-    auto collectFonts = [](const std::vector<std::string>& dirs,
-                           std::vector<std::string>& out)
-    {
-        for (const auto& d : dirs)
-        {
-            if (!std::filesystem::exists(d)) continue;
-            for (auto& entry : std::filesystem::recursive_directory_iterator(
-                     d, std::filesystem::directory_options::skip_permission_denied))
+            if (!std::filesystem::exists(fp)) continue;
+            io.Fonts->Clear();
+            ImFont* font = io.Fonts->AddFontFromFileTTF(fp.c_str(), 18.0f, nullptr,
+                io.Fonts->GetGlyphRangesCyrillic());
+            if (!font) continue;
+            if (!ImGui::SFML::UpdateFontTexture())
             {
-                auto ext = entry.path().extension().string();
-                if (ext == ".ttf" || ext == ".otf" || ext == ".ttc")
-                    out.push_back(entry.path().string());
+                std::cerr << "[Font] UpdateFontTexture failed for: " << fp << std::endl;
+                continue;
+            }
+            bool hasCyr = true;
+            for (ImWchar* cp = cyrTest; *cp; cp++)
+            {
+                if (!font->FindGlyphNoFallback(*cp)) { hasCyr = false; break; }
+            }
+            unsigned int totalGlyphs = 0;
+            for (int i = 0; i < font->IndexLookup.Size; i++)
+            {
+                if (font->IndexLookup[i] != 0) totalGlyphs++;
+            }
+            std::cout << "[Font] " << fp << ": " << totalGlyphs << " glyphs"
+                      << (hasCyr ? " (has Cyrillic)" : " (NO Cyrillic!)") << std::endl;
+            if (hasCyr)
+            {
+                io.FontDefault = font;
+                return true;
             }
         }
+        return false;
     };
 
     std::vector<std::string> fontCandidates;
+
+#ifdef _WIN32
     fontCandidates.push_back(fontPath);
-    collectFonts(getSystemFontDirs(), fontCandidates);
-
-    for (const auto& fp : fontCandidates)
     {
-        if (!std::filesystem::exists(fp)) continue;
-        if (io.Fonts->AddFontFromFileTTF(fp.c_str(), 18.0f, nullptr,
-                io.Fonts->GetGlyphRangesCyrillic()))
-        {
-            std::cout << "[Font] Loaded: " << fp << std::endl;
-        }
+        wchar_t buf[MAX_PATH + 2] = {};
+        std::wstring winDir;
+        if (GetWindowsDirectoryW(buf, MAX_PATH)) winDir = buf;
+        std::string wf = winDir.empty() ? "C:/Windows" : (std::filesystem::path(winDir).string());
+        std::string fontDir = wf + "/Fonts";
+        fontCandidates.push_back(fontDir + "/seguiemj.ttf");
+        fontCandidates.push_back(fontDir + "/segoeui.ttf");
+        fontCandidates.push_back(fontDir + "/tahoma.ttf");
+        fontCandidates.push_back(fontDir + "/arial.ttf");
     }
+#elif defined(__APPLE__)
+    fontCandidates.push_back("/System/Library/Fonts/SFNS.ttf");
+    fontCandidates.push_back("/System/Library/Fonts/Helvetica.ttf");
+    fontCandidates.push_back("/Library/Fonts/Arial.ttf");
+    fontCandidates.push_back(fontPath);
+#else
+    fontCandidates.push_back("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+    fontCandidates.push_back("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf");
+    fontCandidates.push_back("/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf");
+    fontCandidates.push_back("/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf");
+    fontCandidates.push_back("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf");
+    fontCandidates.push_back(fontPath);
+#endif
 
-    if (io.Fonts->Fonts.empty())
+    if (!tryFontsUntilCyrillic(fontCandidates))
     {
+        io.Fonts->Clear();
         io.Fonts->AddFontDefault();
-        std::cerr << "[Font] No fonts loaded, using default" << std::endl;
-    }
-
-    (void)ImGui::SFML::UpdateFontTexture();
-
-    for (int i = 0; i < (int)io.Fonts->Fonts.Size; i++)
-    {
-        const ImFont* f = io.Fonts->Fonts[i];
-        bool hasCyr = f->FindGlyph((ImWchar)0x0424) != nullptr;
-        if (hasCyr)
-        {
-            io.FontDefault = io.Fonts->Fonts[i];
-            std::cout << "[Font] Default set to Font[" << i << "] (has Cyrillic)" << std::endl;
-            break;
-        }
-    }
-    if (!io.FontDefault)
-    {
+        (void)ImGui::SFML::UpdateFontTexture();
         io.FontDefault = io.Fonts->Fonts[0];
-        std::cerr << "[Font] WARNING: No font has Cyrillic!" << std::endl;
+        std::cerr << "[Font] No Cyrillic font found, using default" << std::endl;
     }
 
     game::AppSettings appSettings;
