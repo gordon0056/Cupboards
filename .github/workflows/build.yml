@@ -1,0 +1,84 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            libsfml-dev \
+            nlohmann-json3-dev \
+            catch2 \
+            libfreetype-dev \
+            libxrandr-dev \
+            libudev-dev \
+            libgl1-mesa-dev
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cmake --build build --config Release --parallel
+
+      - name: Run tests
+        working-directory: build
+        run: |
+          ctest --output-on-failure -C Release
+
+      - name: Package (ZIP)
+        run: |
+          cpack --config build/CPackConfig.cmake -G ZIP -B packages
+
+      - name: Package (TGZ) — Linux only
+        if: runner.os == 'Linux'
+        run: |
+          cpack --config build/CPackConfig.cmake -G TGZ -B packages
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ runner.os }}
+          path: packages/
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: packages-*
+          merge-multiple: true
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "Cupboards ${{ github.ref_name }}" \
+            --notes "See [RELEASE.md](RELEASE.md) for details." \
+            packages/*
