@@ -66,7 +66,7 @@ jobs:
         run: |
           cpack --config ${{ env.BUILD_DIR }}/CPackConfig.cmake -G TGZ -B packages
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages-${{ runner.os }}
           path: packages/
@@ -99,7 +99,7 @@ jobs:
 
       - name: Upload analysis log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: clang-tidy-log
           path: tidy.log
