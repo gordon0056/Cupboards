@@ -148,7 +148,7 @@ jobs:
             --ignore-errors inconsistent
           lcov --list coverage.info
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         with:
           files: coverage.info
           fail_ci_if_error: false
