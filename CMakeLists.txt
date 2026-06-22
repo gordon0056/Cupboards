@@ -23,6 +23,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 # SFML
+
 if(USE_SYSTEM_SFML)
     find_package(SFML 2.6 COMPONENTS system window graphics audio REQUIRED)
 else()
@@ -37,6 +38,26 @@ else()
     )
     FetchContent_MakeAvailable(SFML)
 endif()
+
+# Deploy SFML runtime DLLs (Windows) alongside a target so that
+# catch_discover_tests / gtest_discover_tests can run the binary.
+function(deploy_sfml_dlls target_name)
+    if(WIN32 AND TARGET ${target_name})
+        set(SFML_ARCH "x64")
+        if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+            set(SFML_ARCH "x86")
+        endif()
+        add_custom_command(TARGET ${target_name} POST_BUILD
+            COMMAND ${CMAKE_COMMAND}
+                -D SFML_BINARY_DIR="${sfml_BINARY_DIR}"
+                -D SFML_SOURCE_DIR="${sfml_SOURCE_DIR}"
+                -D SFML_ARCH="${SFML_ARCH}"
+                -D TARGET_DIR="$<TARGET_FILE_DIR:${target_name}>"
+                -P "${CMAKE_SOURCE_DIR}/cmake/CopySfmlRuntimeDlls.cmake"
+            COMMENT "Deploying SFML runtime DLLs for ${target_name}"
+        )
+    endif()
+endfunction()
 
 # nlohmann/json
 if(USE_SYSTEM_NLOHMANN_JSON)
@@ -135,7 +156,7 @@ if(BUILD_GAME)
         set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
     endif()
 
-    if(NOT UNIX)
+    if(NOT USE_SYSTEM_SFML)
         set(IMGUI_SFML_FIND_SFML OFF)
     endif()
 
@@ -238,6 +259,7 @@ target_include_directories(core_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/game/src
 )
 
+deploy_sfml_dlls(core_tests)
 include(Catch)
 catch_discover_tests(core_tests)
 
@@ -259,6 +281,7 @@ target_include_directories(core_tests_gtest PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/core/include
 )
 
+deploy_sfml_dlls(core_tests_gtest)
 include(GoogleTest)
 gtest_discover_tests(core_tests_gtest)
 
@@ -348,5 +371,6 @@ if(BUILD_GAME)
         ${CMAKE_CURRENT_SOURCE_DIR}/game/src
     )
 
+    deploy_sfml_dlls(integration_tests)
     gtest_discover_tests(integration_tests)
 endif()

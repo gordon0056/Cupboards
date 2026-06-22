@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [master]
 
+permissions:
+  contents: read
+
 env:
   BUILD_DIR: build
 
@@ -18,18 +21,24 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
+          - macos-latest
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache FetchContent (Windows)
-        if: runner.os == 'Windows'
+      - name: Cache FetchContent (Windows & macOS)
+        if: runner.os != 'Linux'
         uses: actions/cache@v4
         with:
           path: ${{ env.BUILD_DIR }}/_deps
-          key: fetchcontent-${{ runner.os }}-${{ hashFiles('CMakeLists.txt') }}
+          key: fetchcontent-${{ runner.os }}-v2-${{ hashFiles('CMakeLists.txt') }}
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install freetype
 
       - name: Install dependencies (Ubuntu)
         if: runner.os == 'Linux'
@@ -44,13 +53,21 @@ jobs:
             libudev-dev \
             libgl1-mesa-dev
 
-      - name: Configure CMake
-        run: |
-          cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=Release
+      - name: Configure CMake (Windows)
+        if: runner.os == 'Windows'
+        run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build
-        run: |
-          cmake --build ${{ env.BUILD_DIR }} --config Release --parallel
+      - name: Configure CMake (Unix)
+        if: runner.os != 'Windows'
+        run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: cmake --build ${{ env.BUILD_DIR }} --config Release --parallel -- /p:CL_MPCount=$env:NUMBER_OF_PROCESSORS
+
+      - name: Build (Unix)
+        if: runner.os != 'Windows'
+        run: cmake --build ${{ env.BUILD_DIR }} --config Release -j$(getconf _NPROCESSORS_ONLN)
 
       - name: Run tests
         working-directory: ${{ env.BUILD_DIR }}
@@ -61,8 +78,8 @@ jobs:
         run: |
           cpack --config ${{ env.BUILD_DIR }}/CPackConfig.cmake -G ZIP -B packages
 
-      - name: Package (TGZ) — Linux only
-        if: runner.os == 'Linux'
+      - name: Package (TGZ) — Linux & macOS
+        if: runner.os != 'Windows'
         run: |
           cpack --config ${{ env.BUILD_DIR }}/CPackConfig.cmake -G TGZ -B packages
 
@@ -141,22 +158,25 @@ jobs:
           lcov --capture --directory ${{ env.BUILD_DIR }} \
             --output-file coverage.info \
             --rc geninfo_auto_base=1 \
-            --ignore-errors inconsistent
+            --ignore-errors inconsistent,mismatch
           lcov --remove coverage.info \
-            '/usr/*' '*/_deps/*' '*/tests/*' '*/googletest*' \
+            '/usr/*' '*/_deps/*' '*/tests/*' \
             --output-file coverage.info \
-            --ignore-errors inconsistent
+            --ignore-errors inconsistent,mismatch
           lcov --list coverage.info
 
       - uses: codecov/codecov-action@v5
         with:
           files: coverage.info
           fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -164,6 +184,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           pattern: packages-*
+          path: packages
           merge-multiple: true
 
       - name: Create Release
@@ -173,4 +194,4 @@ jobs:
           gh release create "${{ github.ref_name }}" \
             --title "Cupboards ${{ github.ref_name }}" \
             --notes "See [RELEASE.md](RELEASE.md) for details." \
-            packages/*
+            packages/*.zip packages/*.tar.gz
