@@ -1,255 +1,144 @@
-# Cupboards Game Engine
+# Cupboards
 
 [![Build](https://github.com/gordon0056/Cupboards/actions/workflows/build.yml/badge.svg)](https://github.com/gordon0056/Cupboards/actions/workflows/build.yml)
 [![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)](https://github.com/gordon0056/Cupboards/releases)
 [![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)](https://github.com/gordon0056/Cupboards/releases)
+[![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)](https://github.com/gordon0056/Cupboards/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/gordon0056/Cupboards/releases/latest)
 [![codecov](https://codecov.io/gh/gordon0056/Cupboards/graph/badge.svg)](https://codecov.io/gh/gordon0056/Cupboards)
 
-> **Download latest build:** [![Windows](https://img.shields.io/badge/Windows-.zip-0078D6?logo=windows)](https://github.com/gordon0056/Cupboards/releases/latest) [![Linux](https://img.shields.io/badge/Linux-.tar.gz-FCC624?logo=linux)](https://github.com/gordon0056/Cupboards/releases/latest) [![Windows](https://img.shields.io/badge/Windows-Installer-0078D6?logo=windows)](https://github.com/gordon0056/Cupboards/releases/latest)
+> **Download:** [![Windows](https://img.shields.io/badge/Windows-.zip-0078D6?logo=windows)](https://github.com/gordon0056/Cupboards/releases/latest)
+> [![Linux](https://img.shields.io/badge/Linux-.tar.gz-FCC624?logo=linux)](https://github.com/gordon0056/Cupboards/releases/latest)
+> [![macOS](https://img.shields.io/badge/macOS-.tar.gz-000000?logo=apple)](https://github.com/gordon0056/Cupboards/releases/latest)
+> [![Windows](https://img.shields.io/badge/Windows-Installer-0078D6?logo=windows)](https://github.com/gordon0056/Cupboards/releases/latest)
 
-Read in: [English](#-english) | [Русский](#-русский)
+Read in: [English](#english) | [Русский](#русский)
 
 ---
 
 ## English
 
-C++17 board game engine with **SFML 2.6.x** graphics and **Dear ImGui** UI.
-Data-driven levels (JSON), BFS pathfinding, fixed 60 Hz timestep, and state-machine screen system.
+Cupboards is a puzzle game where you move pieces across a graph to their target positions. Each piece can only move to adjacent nodes, and other pieces block the path, so you have to plan the order of moves.
 
-### Features
+Loosely inspired by sokoban and sliding puzzles, but the graph structure changes how you think about it.
 
-* **Data-driven levels**: Pure JSON, no hardcoded puzzles
-* **BFS pathfinding**: Occupied-node-aware shortest path
-* **Fixed timestep**: 60 Hz logic loop with tween animations
-* **State machine**: Menu → Level Select → Game → Win
-* **Audio**: Streaming music + SFX with graceful degradation
-* **Undo (Ctrl+Z)**: Command-pattern move history
-* **Debug overlay**: F1 toggles FPS, BFS, and animation state
+### How to play
 
----
-
-### Build
-
-#### Windows (Visual Studio)
-
-```powershell
-cmake -G "Visual Studio 16 2019" -A x64 -B build .
-cmake --build build --config Release
-.\build\game\Release\cupboards-game.exe
-```
-
-#### Ubuntu / WSL
-
-```bash
-sudo apt-get install libsfml-dev build-essential cmake libfreetype-dev
-cmake -B build_wsl -DCMAKE_BUILD_TYPE=Release
-cmake --build build_wsl -j$(nproc)
-./build_wsl/game/cupboards-game
-```
-
-#### Pre-built binaries
-
-Latest release packages (ZIP, TGZ, NSIS) are available on the [Releases page](https://github.com/gordon0056/Cupboards/releases).
-
-Dependencies are fetched automatically via `FetchContent` (SFML, ImGui, nlohmann/json, Catch2).
-
----
-
-### Build Options
-
-| Option | Default | Description |
-|---|---|---|
-| `BUILD_GAME` | `ON` | Build the game executable |
-| `USE_SYSTEM_SFML` | Linux ON / Win OFF | Use system SFML |
-| `USE_SYSTEM_NLOHMANN_JSON` | Linux ON / Win OFF | Use system nlohmann/json |
-| `USE_SYSTEM_CATCH2` | Linux ON / Win OFF | Use system Catch2 |
-
-```bash
-cmake -B build -DBUILD_GAME=OFF   # core + tests only, no ImGui
-```
-
----
-
-### Controls
+1. Download the latest release for your OS (links above)
+2. Unzip and run `cupboards-game`
+3. Click a piece to select it
+4. Click a highlighted node to move it there
+5. Get all pieces to their targets to complete the level
 
 | Action | Input |
 |---|---|
-| Select a piece | Left-click piece |
+| Select a piece | Left-click |
 | Move a piece | Left-click highlighted node |
-| Undo last move | Ctrl+Z |
-| Toggle debug overlay | F1 |
-| Return to menu | Menu button in Game/Win screen |
+| Undo | Ctrl+Z |
+| Debug info | F1 |
+| Back to menu | Menu button |
 
----
+### Features
 
-### Level Format
+- 17 levels
+- Undo support (Ctrl+Z)
+- Background music and sound effects, adjustable in settings
+- Russian and English UI
+- Dark and light themes
+- Built-in BFS/IDA* solver (used during development for level design)
 
-JSON files in `game/assets/levels/`. Detected automatically at startup.
+### Build from source
 
-```json
-{
-  "name": "Classic 3x3",
-  "piece_count": 6,
-  "nodes": [
-    { "id": 1, "x": 100, "y": 100 },
-    { "id": 2, "x": 200, "y": 100 }
-  ],
-  "edges": [
-    { "a": 1, "b": 2 }
-  ],
-  "start_positions": [1, 2],
-  "win_positions": [2, 1],
-  "piece_colors": ["#FF5733", "#33FF57"],
-  "bg_music": "music_game.ogg"
-}
-```
-
-Add a `.json` file to `game/assets/levels/` — the engine discovers it without recompilation.
-
----
-
-### Tests
+**Windows:**
 
 ```powershell
-cd build
-ctest -C Release --output-on-failure
+cmake -B build .
+cmake --build build --config Release --parallel
+.\build\game\Release\cupboards-game.exe
 ```
 
----
+**Ubuntu / WSL:**
 
-### Project Structure
-
-```
-cupboards/
-├── .github/workflows/        # CI/CD (GitHub Actions)
-├── CMakeLists.txt            # Root: FetchContent + subdirs + CPack
-├── core/                     # cupboards-core (STATIC)
-│   ├── include/core/         # Graph, PathFinder, LevelParser, GameState
-│   └── src/
-├── game/                     # cupboards-game (EXE)
-│   ├── src/                  # Application, screens, tweens, audio
-│   └── assets/levels/        # JSON puzzles
-└── tests/                    # Catch2 + GTest unit/integration tests
+```bash
+sudo apt-get install libsfml-dev build-essential cmake libfreetype-dev
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+./build/game/cupboards-game
 ```
 
-[⬆ Back to top](#cupboards-game-engine)
+**macOS:**
+
+```bash
+brew install cmake freetype
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(sysctl -n hw.logicalcpu)
+./build/game/cupboards-game
+```
+
+Dependencies are fetched automatically via CMake FetchContent. You only need CMake and a C++17 compiler.
 
 ---
 
 ## Русский
 
-Настольная игра-головоломка на C++17 с графикой **SFML 2.6.x** и UI на **Dear ImGui**.
-Уровни в JSON, BFS-поиск пути, фиксированный 60-герцовый такт и стейт-машина экранов.
+Cupboards — головоломка, в которой нужно расставить фишки по целевым позициям на графе. Фишки перемещаются по рёбрам, другие фишки перекрывают путь, так что порядок ходов имеет значение.
 
-### Возможности
+Что-то вроде сокобана или пятнашек, но на графе — это меняет логику решения.
 
-* **Уровни из JSON**: Никакого хардкода
-* **BFS-поиск**: С учётом занятых узлов
-* **Fixed timestep**: 60 Hz с Tween-анимациями
-* **Стейт-машина**: Меню → Выбор уровня → Игра → Победа
-* **Аудио**: Фоновая музыка + звуки, graceful degradation
-* **Отмена (Ctrl+Z)**: История ходов через Command pattern
-* **Отладка**: F1 для FPS, BFS и состояния анимации
+### Как играть
 
----
-
-### Сборка
-
-#### Windows (Visual Studio)
-
-```powershell
-cmake -G "Visual Studio 16 2019" -A x64 -B build .
-cmake --build build --config Release
-.\build\game\Release\cupboards-game.exe
-```
-
-#### Ubuntu / WSL
-
-```bash
-sudo apt-get install libsfml-dev build-essential cmake libfreetype-dev
-cmake -B build_wsl -DCMAKE_BUILD_TYPE=Release
-cmake --build build_wsl -j$(nproc)
-./build_wsl/game/cupboards-game
-```
-
-#### Готовые сборки
-
-Архивы (ZIP, TGZ, NSIS) доступны на [странице релизов](https://github.com/gordon0056/Cupboards/releases).
-
-Зависимости подтягиваются автоматически через `FetchContent`.
-
----
-
-### Параметры сборки
-
-| Параметр | По умолч. | Описание |
-|---|---|---|
-| `BUILD_GAME` | `ON` | Сборка исполняемого файла игры |
-| `USE_SYSTEM_SFML` | Linux ON / Win OFF | Системный SFML |
-| `USE_SYSTEM_NLOHMANN_JSON` | Linux ON / Win OFF | Системный nlohmann/json |
-| `USE_SYSTEM_CATCH2` | Linux ON / Win OFF | Системный Catch2 |
-
----
-
-### Управление
+1. Скачайте последнюю версию для вашей ОС (ссылки вверху)
+2. Распакуйте и запустите `cupboards-game`
+3. Кликните на фишку, чтобы выбрать её
+4. Кликните на подсвеченный узел, чтобы переместить фишку
+5. Расставьте все фишки по целям, чтобы пройти уровень
 
 | Действие | Управление |
 |---|---|
-| Выбрать фишку | ЛКМ на фишку |
+| Выбрать фишку | ЛКМ |
 | Переместить фишку | ЛКМ на подсвеченный узел |
 | Отменить ход | Ctrl+Z |
 | Отладка | F1 |
 | Вернуться в меню | Кнопка «Menu» |
 
----
+### Возможности
 
-### Формат уровня
+- 17 уровней
+- Отмена ходов (Ctrl+Z)
+- Музыка и звуки, настраиваются в меню
+- Русский и английский интерфейс
+- Тёмная и светлая темы
+- Встроенный BFS/IDA* солвер (использовался при разработке уровней)
 
-JSON-файлы в `game/assets/levels/`. Обнаруживаются при запуске.
+### Сборка из исходников
 
-```json
-{
-  "name": "Classic 3x3",
-  "piece_count": 6,
-  "nodes": [
-    { "id": 1, "x": 100, "y": 100 }
-  ],
-  "edges": [
-    { "a": 1, "b": 2 }
-  ],
-  "start_positions": [1, 2],
-  "win_positions": [2, 1]
-}
-```
-
-Положите `.json` в `game/assets/levels/` — движок подхватит без перекомпиляции.
-
----
-
-### Тесты
+**Windows:**
 
 ```powershell
-cd build
-ctest -C Release --output-on-failure
+cmake -B build .
+cmake --build build --config Release --parallel
+.\build\game\Release\cupboards-game.exe
 ```
 
----
+**Ubuntu / WSL:**
 
-### Структура проекта
-
-```
-cupboards/
-├── .github/workflows/        # CI/CD (GitHub Actions)
-├── CMakeLists.txt            # Корневой: FetchContent + подкаталоги + CPack
-├── core/                     # cupboards-core (STATIC)
-│   ├── include/core/         # Graph, PathFinder, LevelParser, GameState
-│   └── src/
-├── game/                     # cupboards-game (EXE)
-│   ├── src/                  # Application, экраны, анимации, аудио
-│   └── assets/levels/        # JSON-головоломки
-└── tests/                    # Catch2 + GTest тесты
+```bash
+sudo apt-get install libsfml-dev build-essential cmake libfreetype-dev
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+./build/game/cupboards-game
 ```
 
-[⬆ Наверх](#cupboards-game-engine)
+**macOS:**
+
+```bash
+brew install cmake freetype
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(sysctl -n hw.logicalcpu)
+./build/game/cupboards-game
+```
+
+Зависимости скачиваются через CMake FetchContent. Нужны только CMake и компилятор с поддержкой C++17.
+
+[⬆ Наверх](#cupboards)

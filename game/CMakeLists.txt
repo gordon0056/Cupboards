@@ -31,19 +31,13 @@ target_link_libraries(cupboards-game
 )
 
 if(WIN32)
+    deploy_sfml_dlls(cupboards-game)
     add_custom_command(TARGET cupboards-game POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying SFML DLLs to output directory..."
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:sfml-graphics>
-            $<TARGET_FILE:sfml-window>
-            $<TARGET_FILE:sfml-system>
-            $<TARGET_FILE:sfml-audio>
-            $<TARGET_FILE_DIR:cupboards-game>
         COMMAND ${CMAKE_COMMAND} -E echo "Copying assets to output directory..."
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/assets
             $<TARGET_FILE_DIR:cupboards-game>/assets
-        COMMENT "SFML DLLs and assets copied"
+        COMMENT "Assets copied"
     )
 else()
     add_custom_command(TARGET cupboards-game POST_BUILD
