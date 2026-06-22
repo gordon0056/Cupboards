@@ -1,5 +1,11 @@
 # Cupboards Game Engine
 
+[![Build](https://github.com/gordon0056/Cupboards/actions/workflows/build.yml/badge.svg)](https://github.com/gordon0056/Cupboards/actions/workflows/build.yml)
+[![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)](https://github.com/gordon0056/Cupboards/releases)
+[![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)](https://github.com/gordon0056/Cupboards/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/github/v/release/gordon0056/Cupboards)](https://github.com/gordon0056/Cupboards/releases)
+
 Read in: [English](#-english) | [Русский](#-русский)
 
 ---
@@ -34,11 +40,15 @@ cmake --build build --config Release
 #### Ubuntu / WSL
 
 ```bash
-sudo apt-get install libsfml-dev build-essential cmake
+sudo apt-get install libsfml-dev build-essential cmake libfreetype-dev
 cmake -B build_wsl -DCMAKE_BUILD_TYPE=Release
 cmake --build build_wsl -j$(nproc)
 ./build_wsl/game/cupboards-game
 ```
+
+#### Pre-built binaries
+
+Latest release packages (ZIP, TGZ, NSIS) are available on the [Releases page](https://github.com/gordon0056/Cupboards/releases).
 
 Dependencies are fetched automatically via `FetchContent` (SFML, ImGui, nlohmann/json, Catch2).
 
@@ -110,7 +120,8 @@ ctest -C Release --output-on-failure
 
 ```
 cupboards/
-├── CMakeLists.txt            # Root: FetchContent + subdirs
+├── .github/workflows/        # CI/CD (GitHub Actions)
+├── CMakeLists.txt            # Root: FetchContent + subdirs + CPack
 ├── core/                     # cupboards-core (STATIC)
 │   ├── include/core/         # Graph, PathFinder, LevelParser, GameState
 │   └── src/
@@ -154,11 +165,15 @@ cmake --build build --config Release
 #### Ubuntu / WSL
 
 ```bash
-sudo apt-get install libsfml-dev build-essential cmake
+sudo apt-get install libsfml-dev build-essential cmake libfreetype-dev
 cmake -B build_wsl -DCMAKE_BUILD_TYPE=Release
 cmake --build build_wsl -j$(nproc)
 ./build_wsl/game/cupboards-game
 ```
+
+#### Готовые сборки
+
+Архивы (ZIP, TGZ, NSIS) доступны на [странице релизов](https://github.com/gordon0056/Cupboards/releases).
 
 Зависимости подтягиваются автоматически через `FetchContent`.
 
@@ -223,7 +238,8 @@ ctest -C Release --output-on-failure
 
 ```
 cupboards/
-├── CMakeLists.txt            # Корневой: FetchContent + подкаталоги
+├── .github/workflows/        # CI/CD (GitHub Actions)
+├── CMakeLists.txt            # Корневой: FetchContent + подкаталоги + CPack
 ├── core/                     # cupboards-core (STATIC)
 │   ├── include/core/         # Graph, PathFinder, LevelParser, GameState
 │   └── src/
