@@ -4,7 +4,9 @@
 [![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)](https://github.com/gordon0056/Cupboards/releases)
 [![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)](https://github.com/gordon0056/Cupboards/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/github/v/release/gordon0056/Cupboards)](https://github.com/gordon0056/Cupboards/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/gordon0056/Cupboards/releases/latest)
+
+> **Download latest build:** [![Windows](https://img.shields.io/badge/Windows-.zip-0078D6?logo=windows)](https://github.com/gordon0056/Cupboards/releases/latest) [![Linux](https://img.shields.io/badge/Linux-.tar.gz-FCC624?logo=linux)](https://github.com/gordon0056/Cupboards/releases/latest) [![Windows](https://img.shields.io/badge/Windows-Installer-0078D6?logo=windows)](https://github.com/gordon0056/Cupboards/releases/latest)
 
 Read in: [English](#-english) | [Русский](#-русский)
 
