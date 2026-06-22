@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  BUILD_DIR: build
+
 jobs:
   build:
     strategy:
@@ -20,6 +23,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Cache FetchContent (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BUILD_DIR }}/_deps
+          key: fetchcontent-${{ runner.os }}-${{ hashFiles('CMakeLists.txt') }}
 
       - name: Install dependencies (Ubuntu)
         if: runner.os == 'Linux'
@@ -36,30 +46,112 @@ jobs:
 
       - name: Configure CMake
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: |
-          cmake --build build --config Release --parallel
+          cmake --build ${{ env.BUILD_DIR }} --config Release --parallel
 
       - name: Run tests
-        working-directory: build
+        working-directory: ${{ env.BUILD_DIR }}
         run: |
           ctest --output-on-failure -C Release
 
       - name: Package (ZIP)
         run: |
-          cpack --config build/CPackConfig.cmake -G ZIP -B packages
+          cpack --config ${{ env.BUILD_DIR }}/CPackConfig.cmake -G ZIP -B packages
 
       - name: Package (TGZ) — Linux only
         if: runner.os == 'Linux'
         run: |
-          cpack --config build/CPackConfig.cmake -G TGZ -B packages
+          cpack --config ${{ env.BUILD_DIR }}/CPackConfig.cmake -G TGZ -B packages
 
       - uses: actions/upload-artifact@v4
         with:
           name: packages-${{ runner.os }}
           path: packages/
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies + clang-tidy
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            libsfml-dev \
+            nlohmann-json3-dev \
+            catch2 \
+            libfreetype-dev \
+            clang-tidy
+
+      - name: Configure with clang-tidy
+        run: |
+          cmake -B ${{ env.BUILD_DIR }} \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_CLANG_TIDY="clang-tidy;--warnings-as-errors=*"
+
+      - name: Build (runs clang-tidy)
+        run: |
+          cmake --build ${{ env.BUILD_DIR }} -j$(nproc) 2>&1 | tee tidy.log
+        continue-on-error: true
+
+      - name: Upload analysis log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-tidy-log
+          path: tidy.log
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies + coverage tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            libsfml-dev \
+            nlohmann-json3-dev \
+            catch2 \
+            libfreetype-dev \
+            lcov \
+            gcc
+
+      - name: Configure with coverage flags
+        run: |
+          cmake -B ${{ env.BUILD_DIR }} \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_FLAGS="--coverage -O0 -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+
+      - name: Build
+        run: |
+          cmake --build ${{ env.BUILD_DIR }} -j$(nproc)
+
+      - name: Run tests
+        working-directory: ${{ env.BUILD_DIR }}
+        run: |
+          ctest --output-on-failure -C Debug
+
+      - name: Collect coverage
+        run: |
+          lcov --capture --directory ${{ env.BUILD_DIR }} \
+            --output-file coverage.info \
+            --rc geninfo_auto_base=1 \
+            --ignore-errors inconsistent
+          lcov --remove coverage.info \
+            '/usr/*' '*/_deps/*' '*/tests/*' '*/googletest*' \
+            --output-file coverage.info \
+            --ignore-errors inconsistent
+          lcov --list coverage.info
+
+      - uses: codecov/codecov-action@v5
+        with:
+          files: coverage.info
+          fail_ci_if_error: false
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
